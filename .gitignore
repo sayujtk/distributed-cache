@@ -1,0 +1,43 @@
+# Build artifacts
+build/
+*.exe
+*.o
+*.a
+*.so
+*.out
+*.obj
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Compiler output
+*.dSYM/
+*.su
+*.gch
+*.pch
+
+# CMake (if you use it later)
+CMakeFiles/
+cmake_build_debug/
+cmake_build_release/
+CMakeCache.txt
+Makefile
+
+# System files
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+
+# Dependencies
+*.a
+*.lib
