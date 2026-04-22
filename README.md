@@ -229,6 +229,40 @@ Node C receives → Remove user:1
 Result: Consistent state across all nodes ✅
 ```
 
+
+## FastAPI Integration Note (Why a Long-Running TCP Server Matters)
+
+A cache is only useful if it **remembers what you stored earlier**. That “memory” lives in **RAM** (your `unordered_map` + `list`), and RAM is cleared when a process exits.
+
+### If the C++ program runs once per request (bad for caching)
+If FastAPI starts a fresh C++ executable for every API call:
+
+1. Start program → cache is empty  
+2. `PUT user:1 Alice`  
+3. Program exits → RAM cleared  
+
+Next API call:
+
+4. Start program again → cache is empty again  
+5. `GET user:1` → **MISS** (it forgot everything)
+
+This is like writing on a whiteboard and erasing it after every question.
+
+### If the C++ cache server stays running (good for caching)
+With a long-running TCP cache server (`cache_server.exe`):
+
+1. Start `cache_server.exe` once → cache is empty  
+2. FastAPI sends TCP: `PUT user:1 Alice`  
+3. C++ stores it in RAM  
+4. Server keeps running (does not exit)  
+5. Later FastAPI sends TCP: `GET user:1`  
+6. C++ still has it in RAM → **HIT**, returns `Alice`
+
+This is like keeping the same whiteboard in the room and not erasing it between questions.
+
+
+
+
 ## Performance Analysis
 
 ### Single vs Multi-threaded
