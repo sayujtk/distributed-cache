@@ -77,6 +77,9 @@ public:
     std::string getNodeId() const { return node_id; }
     int getPort() const { return port; }
     int getCacheSize() const { return local_cache.size(); }
+
+    // Delete key locally (no network broadcast)
+    bool eraseLocal(const std::string &key);
 };
 
 // Manages the entire distributed cache network
@@ -102,6 +105,9 @@ public:
 
     // Get node by ID
     std::shared_ptr<CacheNode> getNode(const std::string &node_id);
+
+    // Delete key from specific node + invalidate peers
+    bool delFromNode(const std::string &node_id, const std::string &key);
 };
 
 #endif // DISTRIBUTED_CACHE_H

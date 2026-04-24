@@ -107,6 +107,14 @@ void CacheNode::put(const std::string &key, const std::string &value)
     broadcastMessage(msg);
 }
 
+bool CacheNode::eraseLocal(const std::string &key)
+{
+    bool removed = local_cache.erase(key);
+    std::cout << "[" << node_id << "] DEL " << key
+              << (removed ? " REMOVED" : " NOT_FOUND") << std::endl;
+    return removed;
+}
+
 void CacheNode::broadcastMessage(const CacheMessage &msg)
 {
     std::lock_guard<std::mutex> lock(queue_mutex);
@@ -125,22 +133,15 @@ void CacheNode::broadcastMessage(const CacheMessage &msg)
 void CacheNode::receiveMessage(const CacheMessage &msg)
 {
     std::lock_guard<std::mutex> lock(queue_mutex);
-
-    // Handle message based on type
     if (msg.type == MessageType::INVALIDATE)
     {
         // Remove key from local cache
-        try
-        {
-            // We don't have a delete method, so we'll just track it
-            std::cout << "[" << node_id << "] INVALIDATING key: " << msg.key
-                      << " (from " << msg.sender_node_id << ")" << std::endl;
-            // In real implementation, delete from cache
-        }
-        catch (...)
-        {
-            // Key doesn't exist, that's fine
-        }
+        bool removed = local_cache.erase(msg.key);
+
+        std::cout << "[" << node_id << "] INVALIDATING key: " << msg.key
+                  << " (from " << msg.sender_node_id << ")"
+                  << (removed ? " -> removed" : " -> not present")
+                  << std::endl;
     }
     else if (msg.type == MessageType::PUT)
     {
@@ -207,6 +208,31 @@ void DistributedCache::putToNode(const std::string &node_id, const std::string &
             }
         }
     }
+}
+
+bool DistributedCache::delFromNode(const std::string &node_id, const std::string &key)
+{
+    auto node = getNode(node_id);
+    if (!node)
+        return false;
+
+    bool removed = node->eraseLocal(key);
+
+    // Invalidate peers regardless (idempotent)
+    for (auto &other_node : nodes)
+    {
+        if (other_node->getNodeId() != node_id)
+        {
+            CacheMessage msg;
+            msg.type = MessageType::INVALIDATE;
+            msg.sender_node_id = node_id;
+            msg.key = key;
+            msg.timestamp = 0;
+            other_node->receiveMessage(msg);
+        }
+    }
+
+    return removed;
 }
 
 void DistributedCache::getFromNode(const std::string &node_id, const std::string &key)

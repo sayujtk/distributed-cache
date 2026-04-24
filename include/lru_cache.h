@@ -40,6 +40,9 @@ public:
     // Put key-value pair (updates if exists, adds if new)
     void put(const std::string &key, const std::string &value);
 
+    // Delete key from cache (returns true if removed, false if not found)
+    bool erase(const std::string &key);
+
     // Check if key exists
     bool contains(const std::string &key);
 

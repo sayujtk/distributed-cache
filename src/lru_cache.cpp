@@ -69,6 +69,26 @@ void LRUCache::put(const std::string &key, const std::string &value)
     }
 }
 
+// Delete key from cache: O(1)
+bool LRUCache::erase(const std::string &key)
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = cache_map.find(key);
+    if (it == cache_map.end())
+    {
+        return false;
+    }
+
+    // erase from list using stored iterator
+    cache_list.erase(it->second);
+
+    // erase from map
+    cache_map.erase(it);
+
+    return true;
+}
+
 // Check if key exists
 bool LRUCache::contains(const std::string &key)
 {
